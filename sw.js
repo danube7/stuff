@@ -1,7 +1,7 @@
 const CACHE_NAME = 'astrohopper-v1';
 const ASSETS = [
-  'Astrohopper.html',
-  'style.css', // Update with your actual filenames
+  '2026_05_27_DK_AstrohopperRaAndDec.html',
+  // Update with your actual filenames
   'main.js',
   'manifest.json'
 ];
