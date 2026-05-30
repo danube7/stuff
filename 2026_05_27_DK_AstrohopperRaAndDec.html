@@ -9588,31 +9588,34 @@ function plotRaDec(fwd) {
 // 1. Safety Check: Exit immediately if the telescope hasn't been aligned yet
 if (global_align_index === -1) return;
 
-// 2. Turnkey Matrix Inversion (Transpose)
-// AstroHopper stores the 3x3 matrix as a flat 9-element array.
-// Swapping the indices mathematically inverts the rotation.
-var m = global_align_matrix;
-var invM = [
-    m[0], m[3], m[6],
-    m[1], m[4], m[7],
-    m[2], m[5], m[8]
-];
-
-// 3. Multiply the inverted matrix by the forward vector to get the Sky Vector
-var skyVector = mvec(invM, fwd);
-
-// 4. Convert Sky Vector (X, Y, Z) to RA and Dec
-var ra_rad = Math.atan2(skyVector[1], skyVector[0]);
-if (ra_rad < 0) { ra_rad += 2 * Math.PI; } // Ensure RA is positive
-var ra_deg = ra_rad * (180.0 / Math.PI);
-
-// Clamp the Z value between -1 and 1 to prevent NaN errors in Math.asin()
-var z = skyVector[2];
-if (z > 1.0) z = 1.0;
-if (z < -1.0) z = -1.0;
-
-var dec_rad = Math.asin(z);
-var dec_deg = dec_rad * (180.0 / Math.PI);
+// 1. Calculate the current Julian Date using the logic found in your code
+    const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
+    
+    // 2. Use your existing method for GAST
+    const gast = this.greenwichApparentSiderealTime(jd_ut);
+    
+    // 3. Define the local-to-ECEF transformation based on your global lat/lon
+    // You likely have a method for this, but to be safe, we use standard matrix rotation
+    const lat = global_lat * Math.PI / 180;
+    const lon = global_lon * Math.PI / 180;
+    
+    // 4. Construct the transformation chain
+    // Step A: Local (N, E, D) to ECEF
+    const mLocalToECEF = Vec.getZRotationMatrix(Math.PI/2 + lon);
+    const mLocalToECEF2 = Vec.getYRotationMatrix(Math.PI/2 - lat);
+    const fwd_ecef = Vec.vecMatrixMul(Vec.vecMatrixMul(fwd, mLocalToECEF), mLocalToECEF2);
+    
+    // Step B: ECEF to GCRS
+    const mGCRS = Vec.getZRotationMatrix(-gast);
+    const fwd_gcrs = Vec.vecMatrixMul(fwd_ecef, mGCRS);
+    
+    // 5. Convert GCRS [x, y, z] to RA/Dec
+    let ra_rad = Math.atan2(fwd_gcrs[1], fwd_gcrs[0]);
+    let dec_rad = Math.asin(fwd_gcrs[2]);
+    
+    let ra_hours = (ra_rad * 180 / Math.PI) / 15;
+    if (ra_hours < 0) ra_hours += 24;
+    let dec_deg = dec_rad * 180 / Math.PI;
 
 // 5. Draw the Output
 context.font = largeF('Sans', 5);
