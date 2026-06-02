@@ -9585,15 +9585,14 @@ function formatDec(decimalDegrees) {
 }
 
 function plotRaDec(fwd) {
-// 1. Safety Check: Exit immediately if the telescope hasn't been aligned yet
-if (global_align_index === -1) return;
 
-// 1. Calculate the current Julian Date using the logic found in your code
-    const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
+// 1. Calculate the current Julian Date.
+const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
     
     // 2. Use your existing method for GAST
     const gast = this.greenwichApparentSiderealTime(jd_ut);
-    
+	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
+	    
     // 3. Define the local-to-ECEF transformation based on your global lat/lon
     // You likely have a method for this, but to be safe, we use standard matrix rotation
     const lat = global_lat * Math.PI / 180;
@@ -9659,45 +9658,7 @@ function plotAltAz(fwd)
 	context.textAlign = 'start';
 	context.fillText(az,5,canvas.height - 5)
 }
-//function plotRaDec() {
-    // 1. Extract the exact 3D vector the phone is pointing at
- //   var camRays = getCameraRays();
- //   var forwardVector = camRays[2];
- //   var skyVector = mvec(global_align_matrix, forwardVector);
 
-    // 2. Convert X, Y, Z back to RA/Dec
- //   var ra_rad = Math.atan2(skyVector[1], skyVector[0]);
- //   if (ra_rad < 0) { ra_rad += 2 * Math.PI; }
- //   var ra_deg = ra_rad * (180.0 / Math.PI);
-    
- //   var dec_rad = Math.asin(skyVector[2]);
- //   var dec_deg = dec_rad * (180.0 / Math.PI);
-
-    // 3. Format the strings
-  //  var ra_text = "RA: " + formatRA(ra_deg);
- //   var dec_text = "Dec: " + formatDec(dec_deg);
-
-    // 4. Draw RA/Dec onto the Canvas dynamically
- //   context.font = largeF('Sans', 4); 
- //   context.fillStyle = "red"; 
-    
-    // Set alignment relative to the anchor point
- //   context.textAlign = "left";
- //   context.textBaseline = "bottom"; 
-    
-    // Dynamic Placement using canvas boundaries
-    // X is 2% of the screen width from the left edge
- //   var xPos = canvas.width * 0.02; 
-    
-    // Y is calculated from the bottom edge up
-    // We space the two lines apart dynamically based on screen height
-//    var yPos_RA = canvas.height * 0.90;  // 10% up from the bottom
-//    var yPos_Dec = canvas.height * 0.95; // 5% up from the bottom
-
-    // Draw the text
- //   context.fillText(ra_text, xPos, yPos_RA); 
-//    context.fillText(dec_text, xPos, yPos_Dec); 
-//}
 function selectTarget(index)
 {
 	findTargetByName();
