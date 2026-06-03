@@ -9593,8 +9593,8 @@ function plotRaDec(fwd) {
   //  const gast = this.greenwichApparentSiderealTime(jd_ut);
 //	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
 	    
-	var alt = Math.asin(fwd[2]);          //Altitude, in radians.
-	var az  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
+	var Alt_rad = Math.asin(fwd[2]);          //Altitude, in radians.
+	var Az_rad  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
 	if(az < 0) az = az + 2 * Math.PI;     //Reduce to 0-2*PI degree in
 		
   //  let dec_rad = Math.asin(fwd_gcrs[2]);
@@ -9605,8 +9605,8 @@ function plotRaDec(fwd) {
     //var dec_rad = 0.334793;  // Dec. of Arcturus in radians, for diagnostics.
 
 	// 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
-	var dec_rad = Math.cos(lat_rad) * Math.cos(alt) * Math.cos(Az);
-    dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(alt);
+	var dec_rad = Math.cos(lat_rad) * Math.cos(Alt_rad) * Math.cos(Az_rad);
+    dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(Alt_rad);
     dec_rad = Math.asin(dec_rad);
 	
 	var dec_deg = dec_rad * 180 / Math.PI;
