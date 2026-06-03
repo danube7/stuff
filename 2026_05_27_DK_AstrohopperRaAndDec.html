@@ -9587,27 +9587,27 @@ function formatDec(decimalDegrees) {
 function plotRaDec(fwd) {
 
 // 1. Calculate the current Julian Date.
-const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
+//const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
     
     // 2. Use your existing method for GAST
-    const gast = this.greenwichApparentSiderealTime(jd_ut);
-	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
+  //  const gast = this.greenwichApparentSiderealTime(jd_ut);
+//	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
 	    
     // 3. Define the local-to-ECEF transformation based on your global lat/lon
     // You likely have a method for this, but to be safe, we use standard matrix rotation
-    const lat = global_lat * Math.PI / 180;
-    const lon = global_lon * Math.PI / 180;
+    //const lat = global_lat * Math.PI / 180;
+//    const lon = global_lon * Math.PI / 180;
 
 // 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
 	
-    let dec_rad = Math.asin(fwd_gcrs[2]);
-	let dec_deg = dec_rad * 180 / Math.PI;
+  //  let dec_rad = Math.asin(fwd_gcrs[2]);
+//	
 
-	
-   
-    // 5. Convert GCRS [x, y, z] to RA/Dec
-    let ra_rad = Math.atan2(fwd_gcrs[1], fwd_gcrs[0]);
 
+  let ra_rad = 7.33550  // R.A. of Arcturus in radians.
+	let dec_rad = 0.334793  // Dec. of Arcturus in radians.
+    let dec_deg = dec_rad * 180 / Math.PI
+    
     
     let ra_hours = (ra_rad * 180 / Math.PI) / 15;
     if (ra_hours < 0) ra_hours += 24;
