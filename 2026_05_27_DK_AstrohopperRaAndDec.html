@@ -9593,12 +9593,10 @@ function plotRaDec(fwd) {
   //  const gast = this.greenwichApparentSiderealTime(jd_ut);
 //	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
 	    
-    // 3. Define the local-to-ECEF transformation based on your global lat/lon
-    // You likely have a method for this, but to be safe, we use standard matrix rotation
-    //const lat = global_lat * Math.PI / 180;
-//    const lon = global_lon * Math.PI / 180;
-
-	
+	var alt = Math.asin(fwd[2]);          //Altitude, in radians.
+	var az  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
+	if(az < 0) az = az + 2 * Math.PI;     //Reduce to 0-2*PI degree in
+		
   //  let dec_rad = Math.asin(fwd_gcrs[2]);
 	var lat_rad = gdata.lat * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
     var lon_rad = gdata.lon * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
@@ -9607,8 +9605,8 @@ function plotRaDec(fwd) {
     //var dec_rad = 0.334793;  // Dec. of Arcturus in radians, for diagnostics.
 
 	// 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
-	var dec_rad = Math.cos(lat_rad) * Math.cos(fwd[0]) * Math.cos(fwd[1]);
-    dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(fwd[0]);
+	var dec_rad = Math.cos(lat_rad) * Math.cos(alt) * Math.cos(Az);
+    dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(alt);
     dec_rad = Math.asin(dec_rad);
 	
 	var dec_deg = dec_rad * 180 / Math.PI;
