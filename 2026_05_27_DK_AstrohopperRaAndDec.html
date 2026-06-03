@@ -9605,6 +9605,9 @@ function plotRaDec(fwd) {
 
     var ra_rad = 3.733550;   // R.A. of Arcturus in radians, for diagnostics.
     var dec_rad = 0.334793;  // Dec. of Arcturus in radians, for diagnostics.
+
+	ra_rad = gdata.lon   //diag.
+	dec_rad = gdata.lat   //diag.
     var dec_deg = dec_rad * 180 / Math.PI;
     var ra_deg = (ra_rad * 180 / Math.PI);
     if (ra_deg < 0) ra_deg += 360;
