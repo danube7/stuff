@@ -9597,24 +9597,21 @@ const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
     // You likely have a method for this, but to be safe, we use standard matrix rotation
     const lat = global_lat * Math.PI / 180;
     const lon = global_lon * Math.PI / 180;
-    
-    // 4. Construct the transformation chain
-    // Step A: Local (N, E, D) to ECEF
-    const mLocalToECEF = Vec.getZRotationMatrix(Math.PI/2 + lon);
-    const mLocalToECEF2 = Vec.getYRotationMatrix(Math.PI/2 - lat);
-    const fwd_ecef = Vec.vecMatrixMul(Vec.vecMatrixMul(fwd, mLocalToECEF), mLocalToECEF2);
-    
-    // Step B: ECEF to GCRS
-    const mGCRS = Vec.getZRotationMatrix(-gast);
-    const fwd_gcrs = Vec.vecMatrixMul(fwd_ecef, mGCRS);
-    
+
+// 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
+	
+    let dec_rad = Math.asin(fwd_gcrs[2]);
+	let dec_deg = dec_rad * 180 / Math.PI;
+
+	
+   
     // 5. Convert GCRS [x, y, z] to RA/Dec
     let ra_rad = Math.atan2(fwd_gcrs[1], fwd_gcrs[0]);
-    let dec_rad = Math.asin(fwd_gcrs[2]);
+
     
     let ra_hours = (ra_rad * 180 / Math.PI) / 15;
     if (ra_hours < 0) ra_hours += 24;
-    let dec_deg = dec_rad * 180 / Math.PI;
+
 
 // 5. Draw the Output
 context.font = largeF('Sans', 5);
