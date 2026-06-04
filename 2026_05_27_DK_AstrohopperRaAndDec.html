@@ -9595,7 +9595,7 @@ function plotRaDec(fwd) {
 	    
 	var Alt_rad = Math.asin(fwd[2]);          //Altitude, in radians.
 	var Az_rad  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
-	if(az < 0) az = az + 2 * Math.PI;     //Reduce to 0-2*PI degree in
+	if(Az_rad < 0) Az_rad = Az_rad + 2 * Math.PI;     //Reduce to 0-2*PI degree in
 		
   //  let dec_rad = Math.asin(fwd_gcrs[2]);
 	var lat_rad = gdata.lat * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
