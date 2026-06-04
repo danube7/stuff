@@ -7959,7 +7959,7 @@ class CPReduce {
         const nutated = Vec.vecMatrixMul(precessed, nutationMatrix);
 
         const radec = this.xyzToRaDec(nutated);
-        const altaz = this.raDecToAltAz(radec[0], radec[1], observer[0], observer[1], jd_ut1);
+        const altaz = this.raDecToAltAz(radec[0], radec[1], observer[0], observer[1], 1);
 
         return [radecj2000[0], radecj2000[1], radec[0], radec[1], altaz[0], altaz[1]];
     }
@@ -8068,8 +8068,8 @@ class CPReduce {
         return 0.0;
     }
 
-    static convertUTCtoTT(jd_utc) {
-        const TAI = this.getLeapSeconds(jd_utc) / 60 / 60 / 24 + jd_utc;
+    static convertUTCtoTT(c) {
+        const TAI = this.getLeapSeconds(c) / 60 / 60 / 24 + c;
         const TT = TAI + 32.184 / 60 / 60 / 24;
 
         return TT;
@@ -9588,11 +9588,20 @@ function plotRaDec(fwd) {
 
 // 1. Calculate the current Julian Date.
 //const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
-    
-    // 2. Use your existing method for GAST
-  //  const gast = this.greenwichApparentSiderealTime(jd_ut);
 //	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
-	    
+	            //Meeus 13.5 and 13.6, modified so West longitudes are negative and 0 is North
+	const gast = this.greenwichApparentSiderealTime(jd_ut);
+    let localSiderealTime = (gmst + lon) % (2 * Math.PI);
+
+	    var date = new Date();
+    // actually same
+    //var jd = gdata.time * 1e-3 / 86400.0 + 2440587.5;
+    var date = new Date();
+    var jd = JulianDate.gregorianDateToJulianDate(date.getUTCFullYear(),date.getUTCMonth()+1,date.getUTCDate(),date.getUTCHours(),date.getUTCMinutes(),date.getUTCSeconds());
+
+
+	
+	
 	var Alt_rad = Math.asin(fwd[2]);          //Altitude, in radians.
 	var Az_rad  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
 	if(Az_rad < 0) Az_rad = Az_rad + 2 * Math.PI;     //Reduce to 0-2*PI degree in
@@ -9601,7 +9610,7 @@ function plotRaDec(fwd) {
 	var lat_rad = gdata.lat * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
     var lon_rad = gdata.lon * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
 	
-    var ra_rad = 3.733550;   // R.A. of Arcturus in radians, for diagnostics.
+    // var ra_rad = 3.733550;   // R.A. of Arcturus in radians, for diagnostics.
     //var dec_rad = 0.334793;  // Dec. of Arcturus in radians, for diagnostics.
 
 	// 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
@@ -9609,6 +9618,12 @@ function plotRaDec(fwd) {
     dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(Alt_rad);
     dec_rad = Math.asin(dec_rad);
 	
+	// cos(HA) = (sin(a) - 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(d)) / (𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(d))
+	var HA = Math.sin(Alt_rad) - Math.sin(lat_rad) * Math.sin(dec_rad)
+	HA = HA / (Math.cos(lat_rad) * Math.cos(dec_rad))
+	
+    ra_rad = localSiderealTime - HA
+    
 	var dec_deg = dec_rad * 180 / Math.PI;
     var ra_deg = (ra_rad * 180 / Math.PI);
     if (ra_deg < 0) ra_deg += 360;
