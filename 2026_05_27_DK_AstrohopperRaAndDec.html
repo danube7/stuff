@@ -9585,70 +9585,89 @@ function formatDec(decimalDegrees) {
 }
 
 function plotRaDec(fwd) {
-
-// 1. Calculate the current Julian Date.
-//const jd_ut = (new Date().getTime() / 86400000) + 2440587.5;
-//	 let localSiderealTime = (gmst + lon) % (2 * Math.PI);
-	            //Meeus 13.5 and 13.6, modified so West longitudes are negative and 0 is North
-	const gast = this.greenwichApparentSiderealTime(jd_ut);
-    let localSiderealTime = (gmst + lon) % (2 * Math.PI);
-
-	    var date = new Date();
-    // actually same
-    //var jd = gdata.time * 1e-3 / 86400.0 + 2440587.5;
-    var date = new Date();
-    var jd = JulianDate.gregorianDateToJulianDate(date.getUTCFullYear(),date.getUTCMonth()+1,date.getUTCDate(),date.getUTCHours(),date.getUTCMinutes(),date.getUTCSeconds());
-
-
-	
-	
-	var Alt_rad = Math.asin(fwd[2]);          //Altitude, in radians.
-	var Az_rad  = Math.atan2(fwd[0],fwd[1]);  //Azimuth, in radians.
-	if(Az_rad < 0) Az_rad = Az_rad + 2 * Math.PI;     //Reduce to 0-2*PI degree in
-		
-  //  let dec_rad = Math.asin(fwd_gcrs[2]);
-	var lat_rad = gdata.lat * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
-    var lon_rad = gdata.lon * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
+	// Exit immediately if GPS hasn't locked yet
+    if (typeof gdata.lat === 'undefined' || typeof gdata.lon === 'undefined') return;
 	
     // var ra_rad = 3.733550;   // R.A. of Arcturus in radians, for diagnostics.
     //var dec_rad = 0.334793;  // Dec. of Arcturus in radians, for diagnostics.
+	
+	// 1. Extract lat/lon (assumed gdata is populated in degrees)
+	var lat_rad = gdata.lat * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
+    var lon_rad = gdata.lon * Math.PI / 180;  // Extract latitude from phone coords, convert to radians.
 
+    // 2. Safely apply the AstroHopper Alignment Matrix (Optional, but recommended)
+    // If you just want raw gyro Alt/Az, you can change 'skyFwd' back to 'fwd'
+    var skyFwd = global_align_index !== -1 ? mvec(global_align_matrix, fwd) : fwd;
+
+    var Alt_rad = Math.asin(skyFwd[2]);          		//Altitude, in radians.          
+    var Az_rad  = Math.atan2(skyFwd[0], skyFwd[1]);   	//Azimuth, in radians. 
+    if(Az_rad < 0) Az_rad += 2 * Math.PI;         		//Reduce to 0-2*PI degree in
+	
+    // 3. Calculate Declination
 	// 𝑠𝑖𝑛(𝛿) = 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝑎) + 𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝑎)𝑐𝑜𝑠(𝐴)
-	var dec_rad = Math.cos(lat_rad) * Math.cos(Alt_rad) * Math.cos(Az_rad);
-    dec_rad = dec_rad + Math.sin(lat_rad) * Math.sin(Alt_rad);
-    dec_rad = Math.asin(dec_rad);
+	var sin_dec = Math.cos(lat_rad) * Math.cos(Alt_rad) * Math.cos(Az_rad) + Math.sin(lat_rad) * Math.sin(Alt_rad);
+    // Clamp to prevent NaN crashes
+    sin_dec = Math.max(-1.0, Math.min(1.0, sin_dec));   //clamp to avoid erros if sin = 1.0000001 due to rounding.
+    var dec_rad = Math.asin(sin_dec);
 	
-	// cos(HA) = (sin(a) - 𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(d)) / (𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(d))
-	var HA = Math.sin(Alt_rad) - Math.sin(lat_rad) * Math.sin(dec_rad)
-	HA = HA / (Math.cos(lat_rad) * Math.cos(dec_rad))
-	
-    ra_rad = localSiderealTime - HA
+    // 4. Calculate Greenwich Mean Sidereal Time (GMST) natively
+    var date = new Date();
+    var d = (date.getTime() / 86400000.0) + 2440587.5 - 2451545.0; // Days since J2000
+    var gmst_deg = 280.46061837 + 360.98564736629 * d;
     
-	var dec_deg = dec_rad * 180 / Math.PI;
-    var ra_deg = (ra_rad * 180 / Math.PI);
+    // 5. Calculate Local Sidereal Time (LST)
+    var LST_deg = (gmst_deg + gdata.lon) % 360.0;
+    if (LST_deg < 0) LST_deg += 360.0;
+    var LST_rad = LST_deg * Math.PI / 180;
+
+	//Alternately....
+    // actually same
+    //var jd = gdata.time * 1e-3 / 86400.0 + 2440587.5;
+    //var date = new Date();
+    //var jd = JulianDate.gregorianDateToJulianDate(date.getUTCFullYear(),date.getUTCMonth()+1,date.getUTCDate(),date.getUTCHours(),date.getUTCMinutes(),date.getUTCSeconds());
+    // let localSiderealTime = (gmst + lon) % (2 * Math.PI);
+	//Meeus 13.5 and 13.6, modified so West longitudes are negative and 0 is North
+	//const gmst = CPReduce.greenwichApparentSiderealTime(jd);
+    //let LST = (gmst + lon_rad) % (2 * Math.PI);  //Local Sidereal Time.
+	
+    // 6. Calculate Hour Angle (HA) safely
+    //𝐻𝐴 = 𝑎𝑟𝑐𝑐𝑜𝑠((𝑠𝑖𝑛(𝑎)–𝑠𝑖𝑛(𝜙)𝑠𝑖𝑛(𝛿)) / (𝑐𝑜𝑠(𝜙)𝑐𝑜𝑠(𝛿))
+    var cos_HA = (Math.sin(Alt_rad) - Math.sin(lat_rad) * sin_dec) / (Math.cos(lat_rad) * Math.cos(dec_rad));
+    cos_HA = Math.max(-1.0, Math.min(1.0, cos_HA)); // Clamp
+    var HA_rad = Math.acos(cos_HA);
+
+    // Correct the Hour Angle sign based on which side of the meridian the object is on
+    if (Math.sin(Az_rad) > 0) { 
+        HA_rad = 2 * Math.PI - HA_rad; 
+    }
+
+    // 7. Calculate Right Ascension
+    var ra_rad = LST_rad - HA_rad;
+    var dec_deg = dec_rad * 180 / Math.PI;
+    var ra_deg = (ra_rad * 180 / Math.PI) % 360;
     if (ra_deg < 0) ra_deg += 360;
 
-// 5. Draw the Output
-context.font = largeF('Sans', 5);
-context.fillStyle = global_style.altaz;
-context.textBaseline = 'bottom';
+	// 8. Set font style.
+	context.font = largeF('Sans', 5);
+	context.fillStyle = global_style.altaz;
+	context.textBaseline = 'bottom';
 
-// Calculate text height so RA and Dec stack cleanly above Alt/Az
-var metrics = context.measureText("M");
-var fontHeightInPixels = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-var step = fontHeightInPixels + 5; // The height of one line plus 5px padding
+	// 9. Calculate text height so RA and Dec stack cleanly above Alt/Az
+	var metrics = context.measureText("M");
+	var fontHeightInPixels = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+	var step = fontHeightInPixels + 5; // The height of one line plus 5px padding
 
-// Alt is at canvas.height - 5. We step up from there.
-var y_dec = (canvas.height - 5) - step;      // Directly above Az
-var y_ra  = (canvas.height - 5) - step;      // Directly above Alt
+	// Alt is at canvas.height - 5. We step up from there.
+	var y_dec = (canvas.height - 5) - step;      // Directly above Az
+	var y_ra  = (canvas.height - 5) - step;      // Directly above Alt
 
-// Draw RA on the left
-context.textAlign = 'start';
-context.fillText("RA: " + formatRA(ra_deg), 5, y_ra);
+	// Draw RA on the left
+	context.textAlign = 'start';
+	context.fillText("RA: " + formatRA(ra_deg), 5, y_ra);
 
-// Draw Dec on the right
-context.textAlign = 'end';
-context.fillText("Dec: " + formatDec(dec_deg), canvas.width - 5, y_dec); 
+	// Draw Dec on the right
+	context.textAlign = 'end';
+	context.fillText("Dec: " + formatDec(dec_deg), canvas.width - 5, y_dec); 
 }
 
 /*   DNK: End R.A. Dec. plotting.  */
